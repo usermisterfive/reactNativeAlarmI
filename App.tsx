@@ -1,4 +1,4 @@
-import React from 'react';
+import { React, useState } from 'react';
 import type {PropsWithChildren} from 'react';
 import Sound from 'react-native-sound';
 import BackgroundTimer from 'react-native-background-timer';
@@ -9,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   useColorScheme,
   View,
 } from 'react-native';
@@ -53,10 +54,75 @@ function Section({children, title}: SectionProps): React.JSX.Element {
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [sound, setSound] = useState();
+  const [hours, setHours] = useState();
+  const [minutes, setMinutes] = useState();
+  const [volume, setVolume] = useState();
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+  function play() {
+    Sound.setCategory('Playback');
+    var eight08 = new Sound('eight08.mp3', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('failed to load the sound', error);
+        return;
+      }
+      console.log('duration=' + eight08.getDuration());
+      console.log(BackgroundTimer);
+      if (verifyVolume()) {
+        eight08.setVolume(Number.parseFloat(volume));
+      }
+      eight08.play((success) => {
+        if (success) {
+          console.log('successfully finished playing');
+        } else {
+          console.log('playback failed');
+        }
+      });
+
+    });
+
+  }
+
+  function isAlarmTime() {
+    const date = new Date();
+    return (date.getHours() == hours
+      && date.getMinutes() == minutes);
+  }
+
+  function setAlarm3() {
+    console.log("Hours=" + hours + ", Minutes="
+      + minutes + ", verifyTime()=" + verifyTime());
+    if (verifyTime()) {
+      const date1 = new Date();
+      date1.setHours(hours);
+      date1.setMinutes(minutes);
+      date1.setSeconds(0);
+      const date2 = new Date();
+      const dateDiff = date1 - date2;
+      const dateDiff2 = 86400000 + dateDiff;
+      console.log("date1=" + date1 + ", date2=" + date2 + ", date1 - date2=" + dateDiff);
+      console.log("verifyVolume()=" + verifyVolume());
+      dateDiff > 0 ? setAlarm4(dateDiff) : setAlarm4(dateDiff2);
+    }
+    function setAlarm4(dateDiff0) {
+      BackgroundTimer.setTimeout(() => play(), dateDiff0);
+      const hour = 1000 * 3600;
+      const minute = 1000 * 60;
+      console.log("Alarm will ring in " + dateDiff0 / (dateDiff0 > hour ? hour
+        : dateDiff0 > minute ? minute : 1000)
+      + (dateDiff0 > hour ? " hours." : dateDiff0 > minute ? " minutes." : " seconds."));
+    }
+  }
+  function verifyTime() {
+    return hours >= 0 && hours <= 24 && minutes >= 0 && minutes <= 60
+  }
+  function verifyVolume() {
+    const volumeNumber = Number.parseFloat(volume);
+    return volumeNumber != NaN && volumeNumber >= 0 && volumeNumber <= 1;
+  }
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -67,54 +133,24 @@ function App(): React.JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
           <Button title="Play" onPress={play} />
-          <Section title="Step One.6">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <Text>Hours:</Text>
+          <TextInput onChangeText={newText => setHours(newText)} />
+          <Text>Minutes:</Text>
+          <TextInput onChangeText={newText => setMinutes(newText)} />
+          <Text>Volume:</Text>
+          <TextInput onChangeText={newText => setVolume(newText)} />
+          <Button title="Set Alarm1" onPress={setAlarm3} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function play() {
-  Sound.setCategory('Playback');
-  var eight08 = new Sound('eight08.mp3', Sound.MAIN_BUNDLE, (error) => {
-    if (error) {
-      console.log('failed to load the sound', error);
-      return;
-    }
-    console.log('duration=' + eight08.getDuration());
-    console.log(BackgroundTimer);
-    var iteration = 0;
-    BackgroundTimer.setTimeout(() => {
-      eight08.play((success) => {
-        if (success) {
-          console.log('successfully finished playing');
-        } else {
-          console.log('playback failed');
-        }
-      });
-    }, 5000);
-  });
-
-}
 
 
 const styles = StyleSheet.create({
